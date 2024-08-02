@@ -15,6 +15,9 @@ const SECRET = 'ApiDaniela'; //Declaração da constante SECRET
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+//Váriavel que ira armazenar o token do usuário
+var tokenUser;
+
 app.get('/', (req, res) => {
     res.render('valida');
 })
@@ -25,22 +28,21 @@ app.get('/rota1', (req, res) => {
     return res.json({ auth: true, token })
 })
 
-// Rota responsável por receber o token por body e atribuir ao header x-access-token
+// Rota responsável por receber o token por body e atribuir a variavel tokenUser
 app.post('/validatoken', (req, res) => {
     const token = req.body.token;
     console.log(token);
-    res.setHeader('x-access-token', token);
-    console.log(req.headers['x-access-token']);
-    return res.status(200).send('Token set in header');
+    tokenUser = token;
+    return res.json("Token foi atribuido, vá para /rota2 para confirmar");
 })
 
 // Funcão responsável pela validação do token, caso seja inválido a requisição será interrompida
 // Caso seja válida ira decodificar o userId (date.now())
 function verifyJWT(req, res, next) {
-    const token = req.headers['x-access-token'];
+    const token = tokenUser;
+    console.log(token);
     jwt.verify(token, SECRET, (err, recoded) => {
         if (err) return res.status(401).end();
-
         req.userId = recoded.userId;
         next();
     })
@@ -48,7 +50,7 @@ function verifyJWT(req, res, next) {
 
 // Rota 2, só ira ser acessada se o token for válido e exibira o UserId
 app.get('/rota2', verifyJWT, (req, res) => {
-    res.status(200).send(`UserId: ${req.userId} - Token validado`);
+    return res.json({ msg: "token válido", userId: req.userId });
 })
 
 app.listen(3000, () =>
